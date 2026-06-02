@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h1 class="mb-4">📚 Статьи по информационной безопасности</h1>
+        
+        <div class="row">
+            {% for article in articles %}
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ article.title }}</h5>
+                        <p class="card-text">{{ article.preview }}</p>
+                        <a href="/article/{{ article.id }}" class="btn btn-primary btn-sm">Читать →</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card bg-light mb-4">
+            <div class="card-body">
+                <h5 class="card-title">🔍 Быстрая проверка</h5>
+                <p class="card-text">Проверьте ссылку на фишинг прямо сейчас</p>
+                <a href="/check" class="btn btn-success">Перейти к проверке</a>
+            </div>
+        </div>
+        
+        <div class="card bg-dark text-white">
+            <div class="card-body">
+                <h5 class="card-title">📊 Наша модель</h5>
+                <p>F1-score: <strong>0,989</strong></p>
+                <p>Точность: <strong>98,9%</strong></p>
+                <p>Признаков: <strong>18</strong></p>
+                <p>URL в обучении: <strong>2000</strong></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

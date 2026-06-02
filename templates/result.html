@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h2 class="mb-4">📊 Результат проверки</h2>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Проверенный URL:</h5>
+                <p class="text-break" style="color: #b0b0b0;">{{ url }}</p>
+            </div>
+        </div>
+        
+        <div class="alert {% if result == 'phishing' %}alert-danger{% else %}alert-success{% endif %} text-center" style="border-radius: 20px;">
+            <h3 class="alert-heading" style="font-size: 2rem;">
+                {% if result == 'phishing' %}
+                    ⚠️ ФИШИНГ!
+                {% else %}
+                    ✅ БЕЗОПАСНО
+                {% endif %}
+            </h3>
+            <div style="font-size: 3rem; font-weight: bold; margin: 20px 0;">
+                {{ probability }}%
+            </div>
+            <div class="progress mb-3" style="height: 10px; background: rgba(255,255,255,0.2);">
+                <div class="progress-bar {% if result == 'phishing' %}bg-danger{% else %}bg-success{% endif %}" 
+                     style="width: {{ probability }}%;"></div>
+            </div>
+            <hr>
+            {% if result == 'phishing' %}
+                <p class="mb-0">⚠️ Не переходите по этой ссылке! Сайт выглядит подозрительно.</p>
+            {% else %}
+                <p class="mb-0">✅ Ссылка выглядит безопасной.</p>
+            {% endif %}
+        </div>
+        
+        <!-- Панель с кнопками действий -->
+        <div class="text-center mt-3">
+            <button class="btn btn-outline-gold me-2" onclick="copyResult()" style="background: transparent; border: 1px solid #d4af37; color: #d4af37; border-radius: 30px; padding: 8px 20px;">
+                📋 Копировать результат
+            </button>
+            <button class="btn btn-outline-gold me-2" onclick="exportResult()" style="background: transparent; border: 1px solid #d4af37; color: #d4af37; border-radius: 30px; padding: 8px 20px;">
+                💾 Сохранить в TXT
+            </button>
+            <button class="btn btn-outline-gold" onclick="shareResult()" style="background: transparent; border: 1px solid #d4af37; color: #d4af37; border-radius: 30px; padding: 8px 20px;">
+                📤 Поделиться
+            </button>
+        </div>
+        
+        <div class="mt-4 text-center">
+            <a href="/check" class="btn btn-primary me-2">Проверить другой URL</a>
+            <a href="/" class="btn btn-secondary">На главную</a>
+            <a href="/history" class="btn btn-info ms-2" style="background: rgba(100,100,120,0.8); border: none;">📜 История проверок</a>
+        </div>
+        
+        <div class="card mt-5">
+            <div class="card-body">
+                <h5 class="card-title">📌 Что было проанализировано</h5>
+                <p>При проверке были использованы 18 признаков: длина URL, доля цифр, наличие HTTPS, 
+                возраст домена (WHOIS), DNS-записи, SSL-сертификат и другие.</p>
+                <small class="text-muted">Все вычисления выполняются локально, данные не передаются третьим лицам.</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Сохранение в историю (localStorage)
+function saveToHistory() {
+    const history = JSON.parse(localStorage.getItem('phishing_history') || '[]');
+    history.push({
+        url: "{{ url }}",
+        result: "{{ result }}",
+        probability: "{{ probability }}",
+        date: new Date().toLocaleString()
+    });
+    // Храним только последние 50 записей
+    if (history.length > 50) history.shift();
+    localStorage.setItem('phishing_history', JSON.stringify(history));
+}
+
+// Копирование результата
+function copyResult() {
+    const resultText = `URL: {{ url }}\nРезультат: {% if result == 'phishing' %}ФИШИНГ{% else %}БЕЗОПАСНО{% endif %}\nВероятность фишинга: {{ probability }}%`;
+    navigator.clipboard.writeText(resultText).then(() => {
+        alert('✅ Результат скопирован в буфер обмена');
+    });
+}
+
+// Экспорт в TXT файл
+function exportResult() {
+    const content = `URL: {{ url }}\nРезультат: {% if result == 'phishing' %}ФИШИНГ{% else %}БЕЗОПАСНО{% endif %}\nВероятность фишинга: {{ probability }}%\nДата проверки: ${new Date().toLocaleString()}`;
+    const blob = new Blob([content], {type: 'text/plain'});
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `phishing_check_${Date.now()}.txt`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+}
+
+// Поделиться результатом (Telegram)
+function shareResult() {
+    const text = `Результат проверки URL: {% if result == 'phishing' %}ФИШИНГ ({{ probability }}%){% else %}БЕЗОПАСНО ({{ probability }}%){% endif %}`;
+    const encodedText = encodeURIComponent(text);
+    window.open(`https://t.me/share/url?url=${encodeURIComponent('{{ url }}')}&text=${encodedText}`, '_blank');
+}
+
+// Вызываем сохранение в историю при загрузке страницы
+saveToHistory();
+</script>
+{% endblock %}

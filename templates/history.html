@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="mb-4">📜 История проверок</h2>
+
+<div id="historyStats" class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">Всего проверок</h5>
+                <h2 id="totalChecks" class="text-gold">0</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">Фишинг обнаружен</h5>
+                <h2 id="phishingCount" class="text-danger">0</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">Безопасные сайты</h5>
+                <h2 id="safeCount" class="text-success">0</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mb-3">
+    <button class="btn btn-danger me-2" onclick="clearHistory()">🗑 Очистить всю историю</button>
+    <button class="btn btn-success" onclick="exportAllHistory()">📥 Экспорт всех данных (CSV)</button>
+</div>
+
+<div id="historyList" class="row">
+    <div class="col-12 text-center text-muted">
+        Загрузка...
+    </div>
+</div>
+
+<script>
+function loadHistory() {
+    const history = JSON.parse(localStorage.getItem('phishing_history') || '[]');
+    const container = document.getElementById('historyList');
+    
+    // Обновляем статистику
+    document.getElementById('totalChecks').textContent = history.length;
+    const phishingCount = history.filter(item => item.result === 'phishing').length;
+    document.getElementById('phishingCount').textContent = phishingCount;
+    document.getElementById('safeCount').textContent = history.length - phishingCount;
+    
+    if (history.length === 0) {
+        container.innerHTML = '<div class="col-12 text-center text-muted">История пуста. Проверьте несколько ссылок.</div>';
+        return;
+    }
+    
+    container.innerHTML = history.reverse().map((item, index) => `
+        <div class="col-md-6 mb-3">
+            <div class="card ${item.result === 'phishing' ? 'border-danger' : 'border-success'}">
+                <div class="card-body">
+                    <p class="text-break"><strong>URL:</strong> ${item.url}</p>
+                    <p><strong>Результат:</strong> ${item.result === 'phishing' ? '🔴 ФИШИНГ' : '🟢 БЕЗОПАСНО'}</p>
+                    <p><strong>Вероятность:</strong> ${item.probability}%</p>
+                    <p><strong>Дата:</strong> ${item.date}</p>
+                    <button class="btn btn-sm btn-outline-gold mt-2" onclick="copyHistoryItem('${item.url.replace(/'/g, "\\'")}', '${item.result}', '${item.probability}')">
+                        📋 Копировать
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function copyHistoryItem(url, result, probability) {
+    const text = `URL: ${url}\nРезультат: ${result === 'phishing' ? 'ФИШИНГ' : 'БЕЗОПАСНО'}\nВероятность: ${probability}%`;
+    navigator.clipboard.writeText(text).then(() => alert('✅ Скопировано'));
+}
+
+function clearHistory() {
+    if (confirm('Вы уверены, что хотите очистить всю историю?')) {
+        localStorage.removeItem('phishing_history');
+        loadHistory();
+        alert('История очищена');
+    }
+}
+
+function exportAllHistory() {
+    const history = JSON.parse(localStorage.getItem('phishing_history') || '[]');
+    if (history.length === 0) {
+        alert('История пуста, нечего экспортировать');
+        return;
+    }
+    
+    // Формируем CSV
+    const headers = ['URL', 'Результат', 'Вероятность', 'Дата'];
+    const rows = history.map(item => [
+        item.url,
+        item.result === 'phishing' ? 'ФИШИНГ' : 'БЕЗОПАСНО',
+        item.probability,
+        item.date
+    ]);
+    
+    const csvContent = [headers, ...rows].map(row => row.join(';')).join('\n');
+    const blob = new Blob(['\uFEFF' + csvContent], {type: 'text/csv;charset=utf-8;'});
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `phishing_history_${Date.now()}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+}
+
+// Загружаем историю при открытии страницы
+loadHistory();
+</script>
+
+<style>
+.text-gold {
+    color: #d4af37;
+}
+</style>
+{% endblock %}

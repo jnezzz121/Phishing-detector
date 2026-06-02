@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h2 class="mb-4">🔍 Проверка URL на фишинг</h2>
+        
+        {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+        
+        <form method="post">
+            <div class="mb-3">
+                <label for="url" class="form-label">Введите URL для проверки</label>
+                <input type="text" class="form-control form-control-lg" id="url" name="url" 
+                       placeholder="https://example.com или example.com" required>
+                <div class="form-text">Протокол (http:// или https://) добавится автоматически</div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg">Проверить</button>
+        </form>
+        
+        <div class="card mt-5">
+            <div class="card-body">
+                <h5>ℹ️ Как это работает</h5>
+                <p>Система анализирует URL по 18 признакам:</p>
+                <ul>
+                    <li>Синтаксические — длина, доля цифр, спецсимволы, HTTPS</li>
+                    <li>WHOIS — возраст домена, скрытие владельца</li>
+                    <li>DNS — количество A и MX записей</li>
+                    <li>SSL — срок действия сертификата</li>
+                    <li>Репутация — сокращённые ссылки</li>
+                </ul>
+                <p>Точность модели — <strong>98,9%</strong> (F1-score на тестовой выборке).</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
